@@ -1,11 +1,7 @@
 #include<iostream>
 #include<cmath>
-#include<string>
 #include<cstdlib>
 #include<ctime>
-#include <algorithm>
-#include <functional>
-//#include<thread>
 #include<SFML/Graphics.hpp>
 
 #include "helper.h"
@@ -20,54 +16,51 @@
 
 using namespace std;
 
-//###################################################################
-//###################################################################
+//####################################################################
+//####################################################################
+//####################################################################
+
 
 int main(){
+	
+	Shape::registerShapeMaker('T', Tetra::mkTetra);
+	Shape::registerShapeMaker('C', Cube::mkCube);
+	Shape::registerShapeMaker('O', Octahedron::mkOcta);
+	Shape::registerShapeMaker('D', Dodecahedron::mkDode);
+	const int NP=4;
+	char shp[NP]={'T', 'C', 'O', 'D'};	
+	
 	srand(time(0));
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 8;
+
+	cout<<"Display settings: "<< sf::VideoMode::getDesktopMode().width << ", " << sf::VideoMode::getDesktopMode().height<<endl;
 
 	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "My window",sf::Style::Default, settings);
 	ReferenceFrame RF(400, 400);
 	Base::set_window(&window);
 	Base::set_rf(&RF);
 
-	RSpace<3> Global({0, 0, 0}, {0, 0, 0});
-	
-	RSpace<3> Crf(Global.spawn({3200, 3200, 3200}, {-50, 105, 65}));		
-	Camera CameraView(Crf, 1.0, 0.8);	
+	std::shared_ptr<RSpace<3>> Global(RSpace<3>::maker({0, 0, 0}, {0, 0, 0}));
 
+	Camera CameraView(Global->spawn({6080, 0, 0}, {0, 90, 0}), 1.0, 0.8);	
 	Shape::setCamera(&CameraView);
-	
+
 	AxeSys XYZ(Global);
-	Cube Cub(Global, sf::Color(0, 102, 153));
-
-	RSpace<3> TetraSp(Global.spawn({0, 0, 800}, {0, 0, 0}));		
-	Tetra Tet(TetraSp, sf::Color(153, 102, 255));
-	Rotation<3> mR({0,1,0}, 2.0);
-	Vect<3> movTet({0,0, 800});
+	CameraView.registerShape(&XYZ);
 	
-	Camera::registerShape(&XYZ);
-	Camera::registerShape(&Cub);
-	Camera::registerShape(&Tet);
-
-	const int NT=20;
-
-	Shape* Shps[NT];
-	RSpace<3>* RS_Tet[NT];
+	Tesseract C4(Global->spawn({800, 800, 0}, {0, 0, 0}), sf::Color(104, 90, 202));
+	CameraView.registerShape(&C4);
 	
-	for(int i=0; i<NT; i++){
-		RS_Tet[i]=new RSpace<3>(Global.spawn({20+5.0*i, 50+4.0*i, 250+8.0*i}, {0, 0, 0}));
-		Shps[i]=new Tetra(*(RS_Tet[i]), sf::Color(rand()%256, rand()%256, rand()%256));
-		Camera::registerShape(Shps[i]);
+	const int Nt=50;
+	Shape* Shps[Nt];
+	for(int i=0; i<Nt; i++){
+		Shps[i]=Shape::Mk_Poliedrom(shp[i%NP], Global->spawn({20, 50, 250}, {0, 0, 0}), sf::Color(rand()%256, rand()%256, rand()%256));		
+		CameraView.registerShape(Shps[i]);
 	}
 	
 	CameraView.takePicture();
 
-	Vect<3> vtmp;
-
-	bool a=false;
 	FrameRate Framerate(50);
 
 	while(window.isOpen()){
@@ -78,40 +71,34 @@ int main(){
 			{
 				window.close();
 			}
-			else if(a && event.type == sf::Event::KeyPressed){
-				// Yes, this bit needs tidy up!
+			else if(event.type == sf::Event::KeyPressed){
+				// I know... I need to tidy up this block...
 				if(event.key.code == sf::Keyboard::Q){
 					// X up
 					CameraView.updateAngle(0, -5.0);
-					a=true;
 				}
 				else if(event.key.code == sf::Keyboard::W){
 					// X down
 					CameraView.updateAngle(0, 5.0);
-					a=true;
 				}
 				else if(event.key.code == sf::Keyboard::S){
 					// Y up
 					CameraView.updateAngle(1, -5.0);
-					a=true;	
 				}
 				else if(event.key.code == sf::Keyboard::A){
 					// Y down
 					CameraView.updateAngle(1, 5.0);
-					a=true;
 				}
 				else if(event.key.code == sf::Keyboard::X){
 					//Z up
 					CameraView.updateAngle(2, -5.0);
-					a=true;
 				}
 				else if(event.key.code == sf::Keyboard::Z){
+					//Z down
 					CameraView.updateAngle(2, 5.0);
-					a=true;
 				}
 				else if(event.key.code>70 && event.key.code<75){
 					CameraView.lRuD(event.key.code);
-					a=true;
 				}
 			}
 		}
@@ -124,31 +111,26 @@ int main(){
 			//################################################################
 			//draw things here ###############################################
 
-			vtmp=mR(movTet);
-			Tet.set_position(vtmp-movTet);
-			movTet=vtmp;
-			
-			Cub.rotate();
-			Tet.rotate();
-			for(int i=0; i<NT; i++){
+			C4.rotate();
+
+			for(int i=0; i<Nt; i++){
 				Shps[i]->rotate();
 				Shps[i]->move(2.0);
 			}
 
 			CameraView.takePicture();
-			a=true;
 
 			// END of drawing ###############################################
 			//###############################################################
-
-			//t=0;
 			Framerate.reset();
 		}
 		window.display();
+		
 	}
-	for(int i=0; i<NT; i++){
+
+	for(int i=0; i<Nt; i++){
+		//cout<<Shps[i]<<endl;
 		delete Shps[i];
-		delete RS_Tet[i];
 	}
 
 	return 0;

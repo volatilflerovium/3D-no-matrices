@@ -7,32 +7,32 @@
 **********************************************************************/
 #ifndef RSPACE_H
 #define RSPACE_H
-
+#include<memory>
 #include"vector.h"
+
+using namespace std;
 
 template<int D>
 class RSpace
-{
+{	
 	private:
 		Vect<D> relPosition; // the position of the origin of the space relatively to the reference space
 		Rotation<D> Transf[D]; // rotations always at (0,0,0)
       RSpace* RF=NULL;
       double angles[D];
-		double getAngle(int i) const;
 		void setRef(RSpace<D>* _RF);
-		Rotation<D> getTransf(int i) const;
-		RSpace<D>* getRF() const;
+		RSpace() = delete;
+		RSpace(Vect<D> initialPosition, std::initializer_list<double> _angles);
 
 	public:
-		RSpace(Vect<D> initialPosition, std::initializer_list<double> _angles);// size in cm
+		~RSpace();
 		RSpace(const RSpace<D>& RS);
-		RSpace(RSpace<D>&& RS);
-		RSpace<D>& operator=(const RSpace<D>& RS);
 		Vect<D> getPos() const;
 		Vect<D> ltw(const Vect<D>& VTX);
 		Vect<D> wtl(const Vect<D>& VTX);
 
-		RSpace<D> spawn(Vect<D> initialPosition, std::initializer_list<double> angles);
+		static std::shared_ptr<RSpace<D>> maker(Vect<D> initialPosition, std::initializer_list<double> angles);
+		std::shared_ptr<RSpace<D>> spawn(Vect<D> initialPosition, std::initializer_list<double> angles);
 
 		void updateTrans(int i, double ang);
 		void move(const Vect<D>& V);// set relPosition+=V
@@ -42,65 +42,31 @@ class RSpace
 //-------------------------------------------------------------------
 
 template<int D>
+RSpace<D>::~RSpace(){
+	/*	/**/
+}
+
+//-------------------------------------------------------------------
+
+template<int D>
 inline Vect<D> RSpace<D>::getPos() const{
 	return relPosition;
 }
 
-template<int D>
-inline Rotation<D> RSpace<D>::getTransf(int i) const{
-	return Transf[i];
-}
-
-template<int D>
-inline RSpace<D>* RSpace<D>::getRF() const{
-	return RF;
-}
-
-template<int D>
-inline double RSpace<D>::getAngle(int i) const{
-	return angles[i];
-}
-
 //-------------------------------------------------------------------
 
 template<int D>
-inline RSpace<D>& RSpace<D>::operator=(const RSpace<D>& RS){
-	for(int i=0; i<D; i++){
-		angles[i]=RS.getAngle(i);
-		Transf[i]=RS.getTransf(i);
-	}
-	relPosition=RS.getPos();
-	RF=RS.getRF();
-	return *this;
-}
-
-//-------------------------------------------------------------------
-
-template<int D>
-inline RSpace<D>::RSpace(const RSpace<D>& RS)
-	:relPosition(RS.getPos()),RF(RS.getRF()) {
-	for(int i=0; i<D; i++){
-		angles[i]=RS.getAngle(i);
-		Transf[i]=RS.getTransf(i);
-	}
+inline std::shared_ptr<RSpace<D>> RSpace<D>::maker(Vect<D> initialPosition, std::initializer_list<double> angles){
+	shared_ptr<RSpace<D>> tmp(new RSpace<D>(initialPosition, angles));
+	return tmp;
 }
 //-------------------------------------------------------------------
 
 template<int D>
-inline RSpace<D>::RSpace(RSpace<D>&& RS)
-	:relPosition(RS.getPos()),RF(RS.getRF()) {
-	for(int i=0; i<D; i++){
-		angles[i]=RS.getAngle(i);
-		Transf[i]=RS.getTransf(i);
-	}
-}
-//-------------------------------------------------------------------
-
-template<int D>
-inline RSpace<D> RSpace<D>::spawn(Vect<D> initialPosition, std::initializer_list<double> angles){
-	RSpace<D> RS(initialPosition, angles);
-	RS.setRef(this);
-	return RS;
+inline std::shared_ptr<RSpace<D>> RSpace<D>::spawn(Vect<D> initialPosition, std::initializer_list<double> angles){
+	shared_ptr<RSpace<D>> tmp(new RSpace<D>(initialPosition, angles));
+	tmp->setRef(this);
+	return tmp;
 }
 
 //-------------------------------------------------------------------

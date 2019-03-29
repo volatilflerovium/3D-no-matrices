@@ -5,6 +5,7 @@
 * Date:    21-03-2019                                                *
 * Author:  Dan Machado                                               *                                         *
 **********************************************************************/
+
 #ifndef VECTOR_CLASS_H
 #define VECTOR_CLASS_H
 
@@ -331,6 +332,13 @@ double ang_cos(const Vect<D>& V, const Vect<D>& W){
 //===================================================================
 
 template<int D>
+double fast_cos(const Vect<D>& V){
+	//return inner_prod(V, W)/(V.norm()*W.norm());
+	return V.coordinate(D-1)/V.norm();
+}
+//===================================================================
+
+template<int D>
 double distance(const Vect<D>& V, const Vect<D>& W){
 	double sum=0;
 	for(int i=0; i<V.get_dimension; i++){
@@ -363,6 +371,7 @@ class Rotation
 		void set_angle(double angle);
 		Vect<D> rtd(const Vect<D>& V) const;
 		Vect<D> rtd(const Vect<D>& V, const Vect<D>& OffV) const;
+		Vect<D> rtd_reverse(const Vect<D>& V) const;
 
 	public:
 		//center of rotation is the line through origin 
@@ -379,6 +388,7 @@ class Rotation
 
 		Rotation(std::initializer_list<double> lp, std::initializer_list<double> lq, double angle);
 		Vect<D> operator()(const Vect<D>& v);
+		//Vect<D> operator()(double ang, const Vect<D>& V);
 		Vect<D> operator()(const Vect<D>& relative_offset, const Vect<D>& V);
 		Vect<D> operator()(std::initializer_list<double> r_offset, const Vect<D>& V);
 		Vect<D> reverse(const Vect<D>& V);
@@ -423,6 +433,8 @@ template<int D>
 Rotation<D>::Rotation(Vect<D> rotation_axe, double angle)
 				:Offset()
 {
+	//Vect<D> O;
+	//Offset=O;
 	set_angle(angle);
 	setup(rotation_axe);
 }
@@ -432,6 +444,8 @@ template<int D>
 Rotation<D>::Rotation(std::initializer_list<double> l, double angle)
 				:Offset()
 {
+	//Vect<D> O;
+	//Offset=O;
 	set_angle(angle);
 	Vect<D> V(l);
 	setup(V);
@@ -443,6 +457,9 @@ Rotation<D>::Rotation(std::initializer_list<double> lp, std::initializer_list<do
 {
 	set_angle(angle);
 	Vect<D> V(lp);
+	//Vect<D> U(lq);
+	//Offset=U;
+	//setup(V-U);
 	setup(V-Offset);
 }
 
@@ -496,6 +513,8 @@ void Rotation<D>::setup(Vect<D> rotation_axe){
 			}
 		}
 		
+		//cout<<P[0]<<" "<<P[1]<<endl;
+		
 		a[P[0]]=rotation_axe.coordinate(P[1]);
 		a[P[1]]=-1.0*rotation_axe.coordinate(P[0]);
 		Vect<D> p(a);
@@ -516,12 +535,20 @@ void Rotation<D>::setup(Vect<D> rotation_axe){
 		r-=rotation_axe.coordinate(P[1])*p.coordinate(P[0]);
 		s[P[0]]=(-1.0*inner_prod(B, rotation_axe)*p.coordinate(P[1]))/r;
 		s[P[1]]=(inner_prod(B, rotation_axe)*p.coordinate(P[0]))/r;
-
+		//cout<<"S: "<<s[2]<<endl;
 		Vect<D> W(s);
+		/*
+		cout<<"DDDD"<<inner_prod(W, p)<<endl;
+		cout<<"p: "<<p<<endl;
+		cout<<"W: "<<W<<endl;
+		*/
 
+		//cout<<"W: "<<W<<endl;
 		P1=p.normalize();
 		P2=W.normalize();
 		Q=sin(rad)*P2+cos(rad)*P1;
+		//cout<<"P1: "<<P1<<endl;
+		//cout<<"P2: "<<P2<<endl;
 	}
 	else{
 		Vect<D> v({1, 0});
@@ -540,6 +567,7 @@ Vect<D> Rotation<D>::rtd(const Vect<D>& V) const {
 	double t=2.0*inner_prod(W, Q);
 	return V-t*Q+(t*2.0*cos(rad)-2.0*inner_prod(W, P1))*P1;
 }
+
 //===================================================================
 
 template<int D>
@@ -547,6 +575,15 @@ Vect<D> Rotation<D>::rtd(const Vect<D>& V, const Vect<D>& OffV) const{
 	Vect<D> W(V-OffV);
 	double t=2.0*inner_prod(W, Q);
 	return V-t*Q+(t*2.0*cos(rad)-2.0*inner_prod(W, P1))*P1;
+}
+
+//===================================================================
+
+template<int D>
+Vect<D> Rotation<D>::rtd_reverse(const Vect<D>& V) const {
+	Vect<D> W(V-Offset);
+	double t=2.0*inner_prod(W, P1);
+	return V-t*P1+(t*2.0*cos(rad)-2.0*inner_prod(W, Q))*Q;
 }
 
 //===================================================================
@@ -560,12 +597,13 @@ Vect<D> Rotation<D>::operator()(const Vect<D>& V){
 
 template<int D>
 Vect<D> Rotation<D>::reverse(const Vect<D>& V){
+	/*
 	static Vect<D> QR;
-		QR=sin(-1.0*rad)*P2+cos(-1.0*rad)*P1;	
-
+	QR=sin(-1.0*rad)*P2+cos(-1.0*rad)*P1;	
 	double t=2.0*inner_prod(V-Offset, QR);
-
 	return V-t*QR+(t*2.0*cos(-1.0*rad)-2.0*inner_prod(V-Offset, P1))*P1;
+	/**/
+	return rtd_reverse(V);
 }
 /**/
 //===================================================================

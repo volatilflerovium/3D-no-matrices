@@ -7,29 +7,30 @@
 **********************************************************************/
 #ifndef CAMERA_H
 #define CAMERA_H
-
-#include<map>
+#include<memory>
 #include<SFML/Graphics.hpp>
 #include "helper.h"
 #include "base.h"
 #include "vector.h"
 #include "rspace.h"
 #include "shape.h"
+#include "fast_list.h"
 
+using namespace std;
 
 class Camera : public Base
 {
 	private:
-		static std::vector<Shape*> Shapes;
-		static std::vector<Shape*> Shapes2;
-		static std::map<Shape*, int> Shapes3;
+		relLink fastList;
+		static void doSomething(Node*, int n);
 
 	public:
-		static void registerShape(Shape* shape);
+		void registerShape(Shape* shape);
 		void takePicture();
 
 	private:
 		RSpace<3>& RS;
+		std::shared_ptr<RSpace<3>> __RS;
 		Vect<3> Ax;
 		Vect<3> vertex[4];
 		bool hasChanged=false;
@@ -38,41 +39,28 @@ class Camera : public Base
 		double threshold=0;
 		double ppWx(float d) const;
 		double ppWy(float d) const;
-		void sorting();
-
+		
 
 	public:
-		Camera(RSpace<3>& _RS, double _fD, double ap);		
+		Camera(std::shared_ptr<RSpace<3>> _RS, double _fD, double ap);		
 		Vect<3> transf(const Vect<3>& V);
 		void updateAngle(int i, double ang);
 		void draw();
 		sf::Vertex VtSFVx(const Vect<3>& V) const;
 		void lRuD(int k);
+		void angCos(Shape* shp); // V is in world coordinates		
+		void updateVertex(sf::Vertex& V, const Vect<3>& W);
 		double angCos(const Vect<3>& V) const; // V is in world coordinates		
-		void sorting2(Shape* shp, double cosZ, bool reset=false);
 };
 
 
 inline void Camera::registerShape(Shape* shape){
-	Shapes.push_back(shape);
-	Shapes3[shape]=Shapes2.size();
-	Shapes2.push_back(shape);
+//	Shapes.push_back(shape);
+	fastList.insert(shape, ang_cos(RS.wtl(shape->getCentroidW()), vertex[3])>=threshold);
 }
 
 
-inline void Camera::sorting(){
-	std::sort(Shapes.begin(), Shapes.end(), [](Shape* s1, Shape* s2)->float{
-		return s1->getCos()>s2->getCos();
-	});
-}
 
-
-inline Vect<3> Camera::transf(const Vect<3>& Vx){
-	Vect<3> Cv=RS.wtl(Vx);
-	double r=fD/Cv.coordinate(2);
-	Cv*=r;
-	return Cv;
-}
 
 
 inline void Camera::updateAngle(int i, double ang){
@@ -89,10 +77,16 @@ inline double Camera::ppWy(float d) const {
 	return d*WINDOW_HEIGHT/(2.0*app);
 }
 
+
+inline void Camera::angCos(Shape* shp){	
+	//bool a=ang_cos(RS.wtl(shp->getCentroidW()), vertex[3])>=threshold;
+	bool a=fast_cos(RS.wtl(shp->getCentroidW()))>=threshold;
+	fastList.swap(shp, a);
+}
+
 // V is in world coordinates
 inline double Camera::angCos(const Vect<3>& V) const{
 	return ang_cos(RS.wtl(V), vertex[3]);
-
 }
 
 
