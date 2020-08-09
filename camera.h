@@ -55,12 +55,8 @@ class Camera : public Base
 
 
 inline void Camera::registerShape(Shape* shape){
-//	Shapes.push_back(shape);
 	fastList.insert(shape, ang_cos(RS.wtl(shape->getCentroidW()), vertex[3])>=threshold);
 }
-
-
-
 
 
 inline void Camera::updateAngle(int i, double ang){
@@ -79,7 +75,6 @@ inline double Camera::ppWy(float d) const {
 
 
 inline void Camera::angCos(Shape* shp){	
-	//bool a=ang_cos(RS.wtl(shp->getCentroidW()), vertex[3])>=threshold;
 	bool a=fast_cos(RS.wtl(shp->getCentroidW()))>=threshold;
 	fastList.swap(shp, a);
 }
