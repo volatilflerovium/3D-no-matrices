@@ -1,8 +1,9 @@
-#include<iostream>
-#include<cmath>
-#include<cstdlib>
-#include<ctime>
-#include<SFML/Graphics.hpp>
+#include <iostream>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+#include <SFML/Graphics.hpp>
+#include <chrono>
 
 #include "helper.h"
 #include "base.h"
@@ -20,9 +21,8 @@ using namespace std;
 //####################################################################
 //####################################################################
 
-
-int main(){
-	
+int main()
+{
 	Shape::registerShapeMaker('T', Tetra::mkTetra);
 	Shape::registerShapeMaker('C', Cube::mkCube);
 	Shape::registerShapeMaker('O', Octahedron::mkOcta);
@@ -34,7 +34,7 @@ int main(){
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 8;
 
-	cout<<"Display settings: "<< sf::VideoMode::getDesktopMode().width << ", " << sf::VideoMode::getDesktopMode().height<<endl;
+	//cout<<"Display settings: "<< sf::VideoMode::getDesktopMode().width << ", " << sf::VideoMode::getDesktopMode().height<<endl;
 
 	sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "My window",sf::Style::Default, settings);
 	ReferenceFrame RF(400, 400);
@@ -45,22 +45,34 @@ int main(){
 
 	Camera CameraView(Global->spawn({6080, 0, 0}, {0, 90, 0}), 1.0, 0.8);	
 	Shape::setCamera(&CameraView);
-
+	
 	AxeSys XYZ(Global);
-	CameraView.registerShape(&XYZ);
+	Cube Cub(Global, sf::Color(0, 102, 153));
+
+	Tetra Tet(Global->spawn({0, 0, 800}, {0, 0, 0}), sf::Color(153, 102, 255));
+	Rotation<3> mR({0,1,0}, 2.0);
+	Vect<3> movTet({0,0, 800});
+
+	Octahedron Octa(Global->spawn({0, 800, 0}, {0, 0, 0}), sf::Color(204, 0, 102));
+
+	Dodecahedron Dode(Global->spawn({0, 0, 0}, {0, 0, 0}), sf::Color(104, 90, 30));
+
+	XYZ.draw();
 	
 	Tesseract C4(Global->spawn({800, 800, 0}, {0, 0, 0}), sf::Color(104, 90, 202));
-	CameraView.registerShape(&C4);
-	
-	const int Nt=50;
+
+	const int Nt=400;
 	Shape* Shps[Nt];
 	for(int i=0; i<Nt; i++){
 		Shps[i]=Shape::Mk_Poliedrom(shp[i%NP], Global->spawn({20, 50, 250}, {0, 0, 0}), sf::Color(rand()%256, rand()%256, rand()%256));		
-		CameraView.registerShape(Shps[i]);
 	}
-	
-	CameraView.takePicture();
 
+	Vect<3> vtmp;
+
+	static double total=0;
+	static double tt=1.0;
+
+	bool a=false;
 	FrameRate Framerate(50);
 
 	while(window.isOpen()){
@@ -72,7 +84,6 @@ int main(){
 				window.close();
 			}
 			else if(event.type == sf::Event::KeyPressed){
-				// I know... I need to tidy up this block...
 				if(event.key.code == sf::Keyboard::Q){
 					// X up
 					CameraView.updateAngle(0, -5.0);
@@ -111,19 +122,31 @@ int main(){
 			//################################################################
 			//draw things here ###############################################
 
-			C4.rotate();
+			auto start = chrono::high_resolution_clock::now();
 
+			C4.rotate();
+			C4.draw();
+			XYZ.draw();
+	
+			int rrr=0;
 			for(int i=0; i<Nt; i++){
 				Shps[i]->rotate();
 				Shps[i]->move(2.0);
+				Shps[i]->draw();
+				if(Shps[i]->display()){
+					rrr++;
+				}
 			}
 
-			CameraView.takePicture();
+			a=true;
 
 			// END of drawing ###############################################
 			//###############################################################
+			//###############################################################
+			//t=0;
 			Framerate.reset();
 		}
+
 		window.display();
 		
 	}

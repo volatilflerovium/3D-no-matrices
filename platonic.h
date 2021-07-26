@@ -1,14 +1,19 @@
+/*********************************************************************
+* implement Shape class as AxeSys, Cube, Tetra, Octahedron, Tesseract*
+*                                                                    *
+* Version: 1.5                                                       *
+* Date:    25-07-2021                                                *
+* Author:  Dan Machado                                               *                                         *
+**********************************************************************/
 #ifndef PLATONIC_H
 #define PLATONIC_H
 
-#include<memory>
-#include<SFML/Graphics.hpp>
+#include <SFML/Graphics.hpp>
 #include "helper.h"
 #include "base.h"
 #include "vector.h"
 #include "rspace.h"
 #include "shape.h"
-//#include ""
 
 //####################################################################
 
@@ -35,6 +40,8 @@ class Cube : public Shape
 		
 };
 
+//======================================================================
+
 inline Shape* Cube::mkCube(std::shared_ptr<RSpace<3>> _RS, sf::Color color){
 	return new Cube(_RS, color);
 }
@@ -52,9 +59,12 @@ class Tetra : public Shape
 		static Shape* mkTetra(std::shared_ptr<RSpace<3>> _RS, sf::Color color);
 };
 
+//======================================================================
+
 inline Shape* Tetra::mkTetra(std::shared_ptr<RSpace<3>> _RS, sf::Color color){
 	return new Tetra(_RS, color);
 }
+
 //###################################################################
 //###################################################################
 //###################################################################
@@ -69,6 +79,8 @@ class Octahedron : public Shape
 		void set_position(const Vect<3>& V);
 		static Shape* mkOcta(std::shared_ptr<RSpace<3>> _RS, sf::Color color);
 };
+
+//======================================================================
 
 inline Shape* Octahedron::mkOcta(std::shared_ptr<RSpace<3>> _RS, sf::Color color){
 	return new Octahedron(_RS, color);
@@ -87,6 +99,8 @@ class Dodecahedron : public Shape
 		static Shape* mkDode(std::shared_ptr<RSpace<3>> _RS, sf::Color color);
 };
 
+//======================================================================
+
 inline Shape* Dodecahedron::mkDode(std::shared_ptr<RSpace<3>> _RS, sf::Color color){
 	return new Dodecahedron(_RS, color);
 }
@@ -97,17 +111,16 @@ inline Shape* Dodecahedron::mkDode(std::shared_ptr<RSpace<3>> _RS, sf::Color col
 
 class Tesseract : public Shape
 {
-	private:
-		Vect<4> Centroid2;
-		Vect<4>* Vertex2;
-	
 	public:
 		~Tesseract();
 		Tesseract(std::shared_ptr<RSpace<3>> _RS, sf::Color color);
 		void updateEdges();
 		void rotate();
-		void draw();
 		void set_position(const Vect<3>& V);
+
+	private:
+		Vect<4> m_Centroid2;
+		Vect<4>* Vertex2;
 };
 
 
