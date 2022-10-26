@@ -19,8 +19,8 @@ Technical commments:
     every shape has a local 3D-space and each of these space are a child of the global space
     (wold space) or of another local space.
 
-Video [here](http://46.32.229.68/img/3d.html)
+Video [here](http://103.102.44.126/img/3d.html)
 
-![Example](http://46.32.229.68/img/3d.png)
+![Example](http://103.102.44.126/img/3d.png)
 
 
